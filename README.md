@@ -39,8 +39,8 @@ Codes used in the book of horticultural bioinformatics
 >--overwrite 1参数表示覆盖上次运行的结果。--anno 1参数会生成一系列后续需要用到的结果文件。  
 >--threads参数指定程序使用的CPU线程数量。  
 
-`bedtools maskfasta -soft -fi tomato.p_ctg.fasta -bed tomato.p_ctg.fasta.mod.EDTA.TEanno.gff3 \`  
-`-fo tomato.p_ctg.fasta.softmasked`  
+`bedtools maskfasta -soft -fi tomato.p_ctg.fasta \`  
+`-fo tomato.p_ctg.fasta.softmasked -bed tomato.p_ctg.fasta.mod.EDTA.TEanno.gff3`  
 
 >使用BEDTools生成soft-masked（软屏蔽重复）的参考基因组。用于后续编码基因预测。
 
@@ -51,8 +51,8 @@ Codes used in the book of horticultural bioinformatics
 >对参考基因组构建索引用于下一步比对。  
 >-p参数指定程序使用的CPU线程数量。  
 
-`hisat2 -x tomato.p_ctg.fasta -1 tomato.1_clean.fq.gz -2 tomato.2_clean.fq.gz -p 52 \`  
-`| samtools sort - > tomato.sort.bam`
+`hisat2 -x tomato.p_ctg.fasta -1 tomato.1_clean.fq.gz -2 tomato.2_clean.fq.gz \`  
+`-p 52 | samtools sort - > tomato.sort.bam`
 
 >将转录组双端测序得到的序列比对到参考基因组上。-x参数指定上一步建好的索引。  
 >-1和-2参数分别指定双端测序文件。-p参数指定程序使用的CPU线程数量。  
