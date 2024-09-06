@@ -69,4 +69,42 @@ Codes used in the book of horticultural bioinformatics
 
 最后的结果文件为`tomato_braker/braker.gff3`
 
+# 3 局部比对 Local alignment
+
+`makeblastdb -in tomato.p_ctg.fasta -dbtype nucl`  
+
+>-in参数指定参考基因组。  
+>-dbtype参数指定数据库类型，nucl为核酸，prot为蛋白质。  
+
+`blastn -query query.fa -db tomato.p_ctg.fasta -out query.fa.blastn \`  
+`-evalue 1e-5 -num_threads 10 -outfmt 6\`   
+
+>-query：指定待比对的序列文件（FASTA格式）。  
+>-db：指定要比对的数据库。  
+>-out：输出结果文件名称。  
+>-evalue：设置E值阈值，过滤掉E值大于1e-5的比对结果。
+>-num_threads：指定程序使用的CPU线程数量。  
+>-outfmt 6：设置输出格式为表格格式，常用于解析和分析。  
+
+>Query：查询序列。  
+>Subject：数据库中匹配到的序列。  
+>Identity：两个序列在比对区域中的相似性百分比。  
+>E-value：期望值，表示在数据库中找到的相似性是随机出现的概率，值越小说明结果越显著。  
+>Score：比对得分，反映了比对的质量。  
+
+`# Query id   Subject id    % identity  alignment length mismatches gap opens q.start q.end s.start s.end evalue bit score`  
+`seq1         gi|12345678|    99.12       100             1         0        1        100    500      600    1e-50    200`  
+`seq1         gi|87654321|    95.00       100             5         0        1        100    200      300    1e-20    180`  
+`seq2         gi|24681357|    90.50       80              8         0        10       90     700      780    1e-10    150`  
+
+>Query id：查询序列的ID（在FASTA文件中指定）。  
+>Subject id：数据库中匹配的序列ID（通常包含基因信息的标识符）。  
+>% identity：比对区域中查询序列与目标序列之间的相似性百分比。  
+>alignment length：比对的长度，即匹配区域中包含的碱基或氨基酸数目。  
+>mismatches：比对过程中不匹配的碱基/氨基酸数目。  
+>gap opens：比对中发生插入或缺失的次数（即gap的个数）。  
+>q.start 和 q.end：查询序列中比对区域的起始和终止位置。  
+>s.start 和 s.end：目标序列（数据库序列）中比对区域的起始和终止位置。  
+>evalue：E值，表示这种比对结果随机出现的概率，值越小越显著。  
+>bit score：比对的得分，得分越高表示比对质量越好。  
 
