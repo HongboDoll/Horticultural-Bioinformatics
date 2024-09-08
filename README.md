@@ -108,3 +108,32 @@ Codes used in the book of horticultural bioinformatics
 >evalue：E值，表示这种比对结果随机出现的概率，值越小越显著。  
 >bit score：比对的得分，得分越高表示比对质量越好。  
 
+# 4 全局比对 Global alignment
+
+`mafft --thread 52 --auto sequences.fasta > aligned_output.fasta`
+
+>--thread：指定程序使用的CPU线程数量。  
+>--auto：自动选择最合适的比对算法，适用于中小规模的序列集。  
+>sequences.fasta：输入的 FASTA 格式的序列文件。  
+>aligned_output.fasta：输出文件，包含比对后的序列。  
+
+# 5 高通量数据比对 HTS mapping
+
+`bwa index reference.fasta`
+
+`bwa mem -t 52 reference.fasta reads.1.fastq.gz reads.1.fastq.gz \`  
+`| samtools sort -O bam -@ 52 > aligned_reads.sort.bam`
+
+>mem：使用BWA-MEM算法。  
+>-t：指定程序使用的CPU线程数量。  
+>reference.fasta：参考基因组文件。  
+>reads.1.fastq.gz reads.1.fastq.gz：双端测序数据的FASTQ文件，使用gzip进行压缩。  
+>管道后的samtools sort：便于后续分析（如变异检测），需对BAM文件按染色体位置进行排序。  
+>-O bam：输出格式为BAM。  
+>-@：指定程序使用的CPU线程数量。  
+
+`samtools index aligned_reads.sort.bam`
+
+`samtools flagstat aligned_reads.sort.bam`
+
+
