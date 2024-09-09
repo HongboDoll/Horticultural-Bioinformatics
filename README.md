@@ -136,4 +136,28 @@ Codes used in the book of horticultural bioinformatics
 
 `samtools flagstat aligned_reads.sort.bam`
 
+# 6 基因组比对 Pairwise genome alignment
+
+`minimap2 -t 52 -x asm5 SLL_Heinz.fasta tomato.p_ctg.fasta > tomato.p_ctg_Heinz.paf`
+
+>-t 52：使用52个CPU线程进行并行计算。  
+>-x asm5：指定全基因组比对模式，适用于序列差异在0.1%左右的两个基因组。  
+>SLL_Heinz.fasta：指定参考基因组序列。  
+>tomato.p_ctg_Heinz.paf：输出比对结果，格式为PAF。  
+
+
+
+`source activate pafCoordsDotPlotly`
+
+>激活pafCoordsDotPlotly环境
+
+`pafCoordsDotPlotly.R -i tomato.p_ctg_Heinz.paf -o tomato.p_ctg_Heinz_dotplot \`  
+`-s -m 10000 -q 10000 -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12`  
+
+>-i：指定上一步PAF格式的比对结果。  
+>-o：指定输出结果的文件前缀。  
+>-s：根据序列相似性指定点图的颜色。  
+>-m：仅显示比对长度大于10000bp的结果。  
+>-q：仅显示比对长度大于10000bp的query序列。  
+>-r：指定横轴要显示的参考基因组上的染色体。  
 
