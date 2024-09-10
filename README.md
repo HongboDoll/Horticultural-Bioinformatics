@@ -117,7 +117,7 @@ Codes used in the book of horticultural bioinformatics
 >sequences.fasta：输入的 FASTA 格式的序列文件。  
 >aligned_output.fasta：输出文件，包含比对后的序列。  
 
-# 5 高通量数据比对 HTS mapping
+# 5 高通量测序数据比对 HTS mapping
 
 `bwa index reference.fasta`
 
