@@ -207,7 +207,7 @@ DP=`samtools depth -a tomato.sort.markdup.bam | awk '{i+=$3}END{print i/NR}'`
 >-a：计算每个位置的覆盖度，包括覆盖度为0的位点。
 
 `bcftools view --threads 52 -m2 -M2 -e "QUAL < 10 || MQ < 10 || DP < 3 || \`  
-`DP>3*\$DP || MQBZ < -(3.5+4*DP/QUAL) || RPBZ > (3+3*DP/QUAL) || \`  
+`DP>3*$DP || MQBZ < -(3.5+4*DP/QUAL) || RPBZ > (3+3*DP/QUAL) || \`  
 `RPBZ < -(3+3*DP/QUAL) || FORMAT/SP > (40+DP/2) || SCBZ > (2.5+DP/30)" \`  
 `tomato.bcftools.vcf | bcftools norm --threads 52 -f SLL_Heinz.fasta \`  
 `-c x -D > tomato.bcftools.filter.vcf`  
@@ -221,7 +221,7 @@ DP=`samtools depth -a tomato.sort.markdup.bam | awk '{i+=$3}END{print i/NR}'`
 QUAL < 10：过滤质量分数小于 10 的变异，质量分数越高，变异越可信。  
 MQ < 10：过滤测序的比对质量（Mapping Quality）小于 10 的变异。  
 DP < 3：过滤测序深度（Depth）小于 3 的变异。  
-DP > 3*$DP：过滤测序深度超过 3 倍平均有效深度（上一步计算得出）的变异。  
+DP > 3*$DP：过滤测序深度超过 3 倍平均有效深度（$DP，上一步计算得出）的变异。  
 MQBZ < -(3.5+4*DP/QUAL)：过滤 Mapping Quality Z-score (MQBZ)   
 的值低于动态阈值的变异，MQBZ 用于检测比对质量分数的偏差。  
 RPBZ > (3+3*DP/QUAL)：过滤 Read Position Bias Z-score (RPBZ)   
@@ -232,7 +232,7 @@ FORMAT/SP > (40+DP/2)：过滤 Strand Bias（测序方向偏差）大于阈值�
 SCBZ > (2.5+DP/30)：过滤 Soft-Clip Bias Z-score (SCBZ) 的值大于阈值的变异，  
 SCBZ 用于检测读长是否有被“软裁剪”现象。  
 
->bcftools norm：这个命令用于对 VCF 文件进行规范化处理（standardization），  
+>bcftools norm：这个命令用于对 VCF 文件进行标准化处理（normalization），  
 >确保变异格式统一，以便后续分析。  
 --threads 52：同样使用52个CPU线程进行并行化处理。  
 -f：提供参考基因组文件，用于校正变异位点。  
