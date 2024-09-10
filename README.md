@@ -161,3 +161,110 @@ Codes used in the book of horticultural bioinformatics
 >-q：仅显示比对长度大于10000bp的query序列。  
 >-r：指定横轴要显示的参考基因组上的染色体。  
 
+# 7 遗传变异的鉴定 Variant calling
+
+`bwa index SLL_Heinz.fasta`
+
+>对SLL_Heinz.fasta番茄参考基因组构建索引。
+
+`bwa mem -t 52 SLL_Heinz.fasta tomato.1_clean.fq.gz tomato.2_clean.fq.gz | \`  
+`samtools sort -O bam -@ 52 > tomato.sort.bam`
+
+>-t 52：使用52个CPU线程进行并行计算。  
+>tomato.1_clean.fq.gz tomato.2_clean.fq.gz：需要鉴定变异的番茄样品，NGS双端测序数据。  
+>-O bam：输出格式为BAM。  
+>-@ 52：使用52个CPU线程进行并行计算。
+
+
+`gatk MarkDuplicates -I tomato.sort.bam -O tomato.sort.markdup.bam \`  
+`-M tomato.sort.markdup.metrics.txt`
+
+>-I：需要标记重复的BAM格式比对结果。  
+>-O：标记重复后的BAM。  
+>-M：检测到的重复条目。  
+
+`samtools index tomato.sort.markdup.bam`  
+
+`samtools faidx SLL_Heinz.fasta`
+>构建参考基因组的FASTA索引。
+
+`bcftools mpileup -a FORMAT/SP --threads 52 -Ou -f SLL_Heinz.fasta \`  
+`tomato.sort.markdup.bam | bcftools call -m -v > tomato.bcftools.vcf`
+
+>-a FORMAT/SP：在VCF结果文件中FORMAT一列输出SP\
+>（Phred-scaled strand bias P-value）信息，用于后续变异的过滤。  
+>--threads 52：使用52个CPU线程进行并行计算。  
+>-Ou：指定输出格式为非压缩的BCF。  
+>-f：指定参考基因组，需要FASTA格式索引。  
+>-m：使用multiallelic and rare-variant calling的算法进行变异鉴定。  
+>-v：仅输出变异位点。  
+
+```
+DP=`samtools depth -a tomato.sort.markdup.bam | awk '{i+=$3}END{print i/NR}'`
+```
+
+>计算每个基因组位置上的比对覆盖度，输出基因组有效的平均测序深度，用于变异过滤。  
+>-a：计算每个位置的覆盖度，包括覆盖度为0的位点。
+
+`bcftools view --threads 52 -m2 -M2 -e "QUAL < 10 || MQ < 10 || DP < 3 || \`  
+`DP>3*\$DP || MQBZ < -(3.5+4*DP/QUAL) || RPBZ > (3+3*DP/QUAL) || \`  
+`RPBZ < -(3+3*DP/QUAL) || FORMAT/SP > (40+DP/2) || SCBZ > (2.5+DP/30)" \`  
+`tomato.bcftools.vcf | bcftools norm --threads 52 -f SLL_Heinz.fasta \`  
+`-c x -D > tomato.bcftools.filter.vcf`  
+
+>bcftools view：用于查看、过滤或转换 VCF 或 BCF 格式的文件。  
+--threads 52：使用52个CPU线程来并行处理数据。  
+-m2 -M2：仅保留二等位变异，不考虑多等位变异。  
+-e：表示用表达式对变异进行过滤。如果表达式为真，该变异将被过滤掉。  
+
+>详细解释过滤条件：  
+QUAL < 10：过滤质量分数小于 10 的变异，质量分数越高，变异越可信。  
+MQ < 10：过滤测序的比对质量（Mapping Quality）小于 10 的变异。  
+DP < 3：过滤测序深度（Depth）小于 3 的变异。  
+DP > 3*$DP：过滤测序深度超过 3 倍平均有效深度（上一步计算得出）的变异。  
+MQBZ < -(3.5+4*DP/QUAL)：过滤 Mapping Quality Z-score (MQBZ)   
+的值低于动态阈值的变异，MQBZ 用于检测比对质量分数的偏差。  
+RPBZ > (3+3*DP/QUAL)：过滤 Read Position Bias Z-score (RPBZ)   
+的值大于动态阈值的变异，RPBZ 检测测序读长在比对时发生偏位的可能性。  
+RPBZ < -(3+3*DP/QUAL)：过滤 RPBZ 值小于该阈值的变异，同样检测测序偏差。  
+FORMAT/SP > (40+DP/2)：过滤 Strand Bias（测序方向偏差）大于阈值的变异，  
+这种偏差可能表明变异是由测序错误引起的。  
+SCBZ > (2.5+DP/30)：过滤 Soft-Clip Bias Z-score (SCBZ) 的值大于阈值的变异，  
+SCBZ 用于检测读长是否有被“软裁剪”现象。  
+
+>bcftools norm：这个命令用于对 VCF 文件进行规范化处理（standardization），  
+>确保变异格式统一，以便后续分析。  
+--threads 52：同样使用52个CPU线程进行并行化处理。  
+-f：提供参考基因组文件，用于校正变异位点。  
+-c x：去除REF的基因型与参考基因组不一致的位点。  
+-D：处理变异中的重复位点，确保同一基因组位置不会被多次记录。  
+
+# 8 系统发生树的构建 Phylogenetic tree
+
+`mafft --auto protein_sequences.fasta > protein_sequences_aligned.fasta`
+
+>--auto：自动选择最适合的比对策略。  
+protein_sequences.fasta：输入的蛋白序列文件（FASTA格式）。  
+protein_sequences_aligned.fasta：输出的比对结果文件。  
+
+`raxmlHPC -f a -s protein_sequences_aligned.fasta -n tree -m PROTGAMMAAUTO \`  
+`-x 12345 -p 12345 -# 100 -T 20`
+
+>-f a：指定分析类型。a 表示进行全面的分析，包括最大似然树的构建和 Bootstrap 置信度评估。  
+-s protein_sequences_aligned.fasta：输入的比对文件。  
+-n tree：输出文件的前缀。  
+-m PROTGAMMAAUTO：选择蛋白质进化模型，PROTGAMMAAUTO 代表自动选择适合的进化模型。  
+-x 12345：指定随机种子，用于在Bootstrap分析中生成随机样本的起始点。  
+-p 12345：指定随机种子，用于启动树重建过程中的随机数生成。  
+-# 100：执行100次Bootstrap重采样，以评估树的可靠性。  
+-T 20：指定使用的线程数。将使用20个CPU线程来加速分析过程。
+
+
+>RAxML_bestTree.tree：最佳的最大似然树。  
+RAxML_bootstrap.tree：Bootstrap支持度树。
+
+>可以使用树可视化工具（如FigTree或iTOL）来查看和解释构建的系统发生树。
+
+
+
+
